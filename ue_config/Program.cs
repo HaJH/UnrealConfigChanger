@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ue_config
 {
@@ -10,7 +11,7 @@ namespace ue_config
         {
             string configDirPath = args[0]; // "C:\\Users\\MyComputer\\Documents\\notd\\Config"
             string configFileName = args[1]; // "DefaultEngine.ini"
-            string keyString = args[2]; // "ProjectVersion="
+            string keyString = args[2]; // "ProjectVersion"
             string ValueString = args[3]; // 
             if (args.Length != 4)
             {
@@ -24,33 +25,30 @@ namespace ue_config
             }
 
             string ConfigFilePath = Path.Combine(configDirPath, configFileName);
-            string[] ConfigTexts = System.IO.File.ReadAllLines(ConfigFilePath);
-
-            int DesiredTextLineIndex = -1;
+            string[] lines = System.IO.File.ReadAllLines(ConfigFilePath);
 
             Console.WriteLine("Update " + configFileName);
             Console.WriteLine("Key : " + keyString);
 
-            for (int i = 0; i < ConfigTexts.Length; i++)
+            // 정규식 패턴 정의
+            string pattern = $@"({keyString}="")[^""]*("")"; 
+            string replacement = $"{keyString}=\"{ValueString}\"";
+            
+            // 텍스트에서 키에 해당하는 값을 변경
+            for (int i = 0; i < lines.Length; i++)
             {
-                if (ConfigTexts[i].Contains(keyString))
+                if (lines[i].Contains(keyString))
                 {
-                    Console.WriteLine("Old value : " + ConfigTexts[i]);
-                    DesiredTextLineIndex = i;
-                    break;
+                    //Print log
+                    Console.WriteLine("Line : " + i + "");
+                    Console.WriteLine("Old Value : " + lines[i]);
+                    lines[i] = Regex.Replace(lines[i], pattern, replacement);
+                    Console.WriteLine("New Value : " + lines[i]);
                 }
             }
 
-            ConfigTexts[DesiredTextLineIndex] = $"{keyString}{ValueString}";
-
-            using (StreamWriter outputFile = new StreamWriter(ConfigFilePath))
-            {
-                foreach (string defaultGameTextLine in ConfigTexts)
-                {
-                    outputFile.WriteLine(defaultGameTextLine);
-                    Console.WriteLine("Old value : " + ConfigTexts[DesiredTextLineIndex]);
-                }
-            }
+            // 수정된 내용을 파일에 저장
+            File.WriteAllLines(ConfigFilePath, lines);
             Console.WriteLine("Update success.");
         }
     }
